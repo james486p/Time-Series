@@ -1,0 +1,560 @@
+---
+title: "FA542FINAL"
+Author: "James Snyder"
+Date: "12-17-2023"
+output:
+  pdf_document: default
+  html_notebook: default
+  word_document: default
+---
+
+
+
+```{r}
+#1a
+#coefficients_eq1 <- c(1, -0.1, -0.05)
+#coefficients_eq2 <- c(1, -0.3, 0.1)
+#roots_eq1 <- polyroot(coefficients_eq1)
+#roots_eq2 <- polyroot(coefficients_eq2)
+#print("Roots for the first equation:")
+#print(roots_eq1)
+#print("Roots for the second equation:")
+#print(roots_eq2)
+#eigen_result <- eigen(A)
+#print("Eigenvalues of matrix A:")
+#print(eigen_result$values)
+
+A <- matrix(rep(1,4),nrow = 2)
+
+coefficients_eq1 <- c(1, -0.1, -0.05)
+coefficients_eq2 <- c(1, -0.3, 0.1)
+roots_eq1 <- polyroot(coefficients_eq1)
+roots_eq2 <- polyroot(coefficients_eq2)
+print("Roots for the first equation:")
+print(roots_eq1)
+print("Roots for the second equation:")
+print(roots_eq2)
+eigen_result <- eigen(A)
+print("Eigenvalues of matrix A:")
+print(eigen_result$values)
+
+```
+
+Analysis:
+First Equation:
+The roots of the first equation are both real numbers. Specifically, Root 1 is positive, and Root 2 is negative. Real roots indicate stability, suggesting that the process is not diverging over time.
+Second Equation:
+
+The roots of the second equation are complex conjugate pairs (one with a positive imaginary part, and one with a negative imaginary part). Complex roots with a negative real part also indicate stability. The presence of complex roots implies oscillatory behavior, which is expected in a system with lagged terms.
+Eigenvalues:
+
+The eigenvalues of matrix A are both positive, which is a necessary condition for a stationary process. The magnitude of the eigenvalues determines the rate of decay of the autocorrelation function. Smaller eigenvalues suggest a slower decay, while larger eigenvalues indicate a faster decay
+
+
+
+```{r}
+#b(i)
+#p0 <- matrix(c(-0.05, 0.1), nrow = 2)
+#m <- solve(diag(2) - p1) %*% p0
+#cat("The mean vector is: \n")
+#print(m)
+
+
+p1 <- matrix(c(0.1, 0.05, -0.1, 0.3), nrow = 2)
+
+p0 <- matrix(c(-0.05, 0.1), nrow = 2)
+
+
+m <- solve(diag(2) - p1) %*% p0
+
+
+cat("The mean vector is:\n")
+print(m)
+
+```
+
+
+```{r}
+#b(ii)
+transposed_result <- (p1 - c(m))%*%t(p1-c(m))
+print("Transposed result:")
+print(transposed_result)
+```
+
+```{r}
+#b(iii)
+g1 <- p1 %*% transposed_result
+g2 <- p1 %*% g1
+g3 <- p1 %*% g2
+g4 <- p1 %*% g3
+g5 <- p1 %*% g4
+J <- diag(c(sqrt(transposed_result[1, 1]), sqrt(transposed_result[2, 2])), 2,2)
+
+solve(J)%*%g1%*%solve(J)
+solve(J)%*%g2%*%solve(J)
+solve(J)%*%g5%*%solve(J)
+
+```
+
+
+```{r}
+#c
+r0 <- c(-0.02, 0.08)
+a0 <- c(-0.08, 0.1)
+r1_0 <- p1 %*% r0 + p0
+r2_0 <- p1 %*% r1_0 + p0
+r3_0 <- p1 %*% r2_0 + p0
+
+V1_0 <- p1 %*% transposed_result %*% t(p1) + transposed_result
+V2_0 <- p1 %*% g1 %*% t(p1) + g1
+V3_0 <- p1 %*% g2 %*% t(p1) + g2
+
+cat("1-Step Ahead Forecast (r1|0):\n")
+print(r1_0)
+
+cat("2-Step Ahead Forecast (r2|0):\n")
+print(r2_0)
+
+cat("3-Step Ahead Forecast (r3|0):\n")
+print(r3_0)
+
+cat("Covariance Matrix of 1-Step Ahead Forecast Error (V1|0):\n")
+print(V1_0)
+
+cat("Covariance Matrix of 2-Step Ahead Forecast Error (V2|0):\n")
+print(V2_0)
+
+cat("Covariance Matrix of 3-Step Ahead Forecast Error (V3|0):\n")
+print(V3_0)
+
+
+```
+
+```{r}
+
+#d
+library(MASS)  
+library(ggplot2)  
+coefficients_eq1 <- c(1, -0.1, -0.05)
+coefficients_eq2 <- c(1, -0.3, 0.1)
+p0 <- matrix(c(-0.05, 0.1), nrow = 2)
+p1 <- matrix(c(0.1, 0.05, -0.1, 0.3), nrow = 2, byrow = TRUE)
+Sigma <- matrix(c(0.4, -0.1, -0.1, 0.2), nrow = 2, byrow = TRUE)
+r0 <- c(-0.02, 0.08)
+a0 <- c(-0.08, 0.1)
+
+simulate_time_series <- function(n) {
+
+  r <- matrix(0, n, 2)
+  a <- mvrnorm(n, mu = c(0, 0), Sigma = Sigma)
+  
+ 
+  for (t in 2:n) {
+    r[t, ] <- p0 + p1 %*% r[t - 1, ] + a[t, ]
+  }
+  
+  return(r)
+}
+
+# (i)
+set.seed(123)  
+n_sim <- 1000
+simulated_series <- simulate_time_series(n_sim)
+
+ggplot(data.frame(r1 = simulated_series[, 1], r2 = simulated_series[, 2]), aes(x = 1:n_sim)) +
+  geom_line(aes(y = r1, color = "r1"), size = 1) +
+  geom_line(aes(y = r2, color = "r2"), size = 1) +
+  labs(title = "Simulated Time Series", x = "Time", y = "Log Returns") +
+  theme_minimal()
+
+# (ii) Find the sample mean and covariance
+sample_mean <- colMeans(simulated_series)
+sample_covariance <- cov(simulated_series)
+
+analytical_mean <- solve(diag(2) - p1) %*% p0
+analytical_covariance <- solve(diag(2) - p1) %*% Sigma %*% t(solve(diag(2) - p1))
+
+cat("Sample Mean:\n", sample_mean, "\n\n")
+cat("Analytical Mean:\n", analytical_mean, "\n\n")
+
+cat("Sample Covariance:\n", sample_covariance, "\n\n")
+cat("Analytical Covariance:\n", analytical_covariance, "\n\n")
+
+# (iii)
+lag1_correlation <- cor(simulated_series[-n_sim, ], simulated_series[-1, ])
+lag2_correlation <- cor(simulated_series[-c(n_sim, n_sim - 1), ], simulated_series[-c(1, 2), ])
+lag5_correlation <- cor(simulated_series[-c(n_sim, n_sim - 1, n_sim - 2, n_sim - 3, n_sim - 4), ],
+                        simulated_series[-c(1, 2, 3, 4, 5), ])
+
+cat("Sample Lag-1 Cross-Correlation Matrix:\n", lag1_correlation, "\n\n")
+cat("Sample Lag-2 Cross-Correlation Matrix:\n", lag2_correlation, "\n\n")
+cat("Sample Lag-5 Cross-Correlation Matrix:\n", lag5_correlation, "\n\n")
+
+
+
+```
+
+Sample Mean:
+ -0.0667396 0.1354607 
+
+Analytical Mean:
+ -0.04724409 0.1496063 
+
+The sample mean values are close to the analytical mean, indicating that the simulated data approximates the expected mean. Small discrepancies are expected due to the inherent randomness in the simulation.
+
+The sample covariance matrix closely approximates the analytical covariance. This implies that the simulated data captures the inherent variability and co-movements between r1and r2
+
+Lag-1 correlations indicate the short-term dependence between consecutive returns. Lag-2 and Lag-5 correlations capture longer-term dependencies. The negative values suggest inverse relationships between returns at different lags.
+
+
+```{r}
+#d(iv)
+simulate_and_forecast <- function(n_simulations, n_steps, r0, a0) {
+  
+  forecast_errors <- matrix(0, n_simulations, n_steps * 2)
+  
+  
+  for (sim in 1:n_simulations) {
+    
+    simulated_series <- simulate_time_series(n_steps + 1)
+    
+    
+    forecasted_returns <- matrix(0, n_steps, 2)
+    for (step in 1:n_steps) {
+      forecasted_returns[step, ] <- p1 %*% simulated_series[step, ] + p0
+    }
+    
+    
+    forecast_errors[sim, ] <- as.vector(forecasted_returns - simulated_series[2:(n_steps + 1), ])
+  }
+  
+  return(forecast_errors)
+}
+
+n_simulations <- 10000
+n_steps <- 3
+
+
+forecast_errors <- simulate_and_forecast(n_simulations, n_steps, r0, a0)
+sample_covariance_errors <- cov(t(forecast_errors))
+analytical_covariance_errors <- solve(diag(2) - p1) %*% Sigma %*% t(solve(diag(2) - p1))
+
+
+cat("Sample Covariance of Errors:\n")
+#print(sample_covariance_errors)
+
+cat("\nAnalytical Covariance of Errors:\n")
+print(analytical_covariance_errors)
+
+
+```
+
+
+The values on the diagonal represent the variances of the returns, and the off-diagonal values represent the covariances. Basically it quantifies how the returns of one security relate to the returns of the other over time.
+
+The value at [1,1] (0.4699609) indicates the variance of the first security's returns.
+The value at [2,2] (0.4563209) indicates the variance of the second security's returns.
+The values at [1,2] and [2,1] (-0.2021204) indicate the covariance between the returns of the two securities.
+
+1-Step Ahead Forecast Error Covariance Matrix (V1|0):
+This matrix represents the uncertainty or errors associated with predicting the returns of both securities one time step ahead. It provides insights into how accurate or uncertain the forecasted returns are.
+
+The value at [1,1] (0.03143963) represents the variance of the error in forecasting the returns of the first security one step ahead.
+The value at [2,2] (0.09420357) represents the variance of the error in forecasting the returns of the second security one step ahead.
+The values at [1,2] and [2,1] (-0.02171891) represent the covariance between the forecast errors of the two securities.
+2-Step Ahead Forecast Error Covariance Matrix (V2|0):
+This matrix represents the uncertainty or errors associated with predicting the returns of both securities two time steps ahead.
+
+3-Step Ahead Forecast Error Covariance Matrix (V3|0):
+This matrix represents the uncertainty or errors associated with predicting the returns of both securities three time steps ahead.
+
+```{r}
+
+#e(i) 
+set.seed(123) 
+n_sim_univariate <- 1000
+simulated_series_univariate <- simulate_time_series(n_sim_univariate)
+plot(1:n_sim_univariate, simulated_series_univariate[, 1], type = "l", col = "blue", xlab = "Time", ylab = "Log Returns", main = "Simulated Univariate Time Series")
+lines(1:n_sim_univariate, simulated_series_univariate[, 2], col = "red")
+legend("topright", legend = c("Security 1", "Security 2"), col = c("blue", "red"), lty = 1)
+
+
+```
+
+
+```{r}
+
+# e(ii) 
+arima_model_1 <- arima(simulated_series_univariate[, 1], order = c(1, 0, 0))
+arima_model_2 <- arima(simulated_series_univariate[, 2], order = c(1, 0, 0))
+#3(iii)
+mean_univariate_1 <- coef(arima_model_1)[1]
+mean_univariate_2 <- coef(arima_model_2)[1]
+cat("Mean of Univariate Model for Security 1:", mean_univariate_1, "\n")
+cat("Mean of Univariate Model for Security 2:", mean_univariate_2, "\n")
+
+#e(iv)
+forecast_steps <- c(1, 2, 3)
+forecasts_univariate_1 <- matrix(0, n_sim_univariate, length(forecast_steps))
+forecasts_univariate_2 <- matrix(0, n_sim_univariate, length(forecast_steps))
+
+for (i in forecast_steps) {
+  forecast_1 <- predict(arima_model_1, n.ahead = i)
+  forecast_2 <- predict(arima_model_2, n.ahead = i)
+  
+  forecasts_univariate_1[, 1:i] <- forecast_1$pred
+  forecasts_univariate_2[, 1:i] <- forecast_2$pred
+}
+
+forecast_errors_sd_univariate_1 <- apply(simulated_series_univariate[, 1] - forecasts_univariate_1, 2, sd)
+forecast_errors_sd_univariate_2 <- apply(simulated_series_univariate[, 2] - forecasts_univariate_2, 2, sd)
+cat("Standard Deviation of Forecast Errors (Univariate Security 1):\n", forecast_errors_sd_univariate_1, "\n")
+cat("Standard Deviation of Forecast Errors (Univariate Security 2):\n", forecast_errors_sd_univariate_2, "\n")
+
+
+```
+
+The AR coefficients represent the strength and direction of the autoregressive relationships in each univariate model. A positive coefficient indicates a positive correlation between current and past values.
+
+Comparison with Bivariate Series Results:
+Bivariate Series (Mean Vector):
+Mean Vector from Bivariate Series:
+Security 1: -0.04724409
+Security 2: 0.14960630
+Univariate AR(1) Models (Mean):
+Mean of Univariate Model for Security 1: 0.05041052
+Mean of Univariate Model for Security 2: 0.3118445
+
+The mean vector from the bivariate series represents the joint mean of Security 1 and Security 2.
+The means from the univariate AR(1) models provide individual means for each security.
+Comparing the mean of Security 1, the univariate model slightly differs from the bivariate series mean.
+The mean of Security 2 from the univariate model is notably higher than the joint mean from the bivariate series.
+
+
+```{r}
+#2a&b
+library(quantmod)
+symbol <- "AAPL"
+start_date <- "1990-01-01"
+end_date <- "2023-12-01"
+
+getSymbols(symbol, src = "yahoo", from = start_date, to = end_date, auto.assign = TRUE, return.class = "xts")
+
+weeks <- weeklyReturn(Cl(AAPL), type = "log")
+
+par(mfrow = c(1, 2))
+
+acf_result <- acf(weeks, lag.max = 12, main = "Autocorrelation Function for Weekly Log Returns")
+pacf_result <- pacf(weeks, lag.max = 12, main = "Partial Autocorrelation Function for Weekly Log Returns")
+par(mfrow = c(1, 1))
+
+
+box_test_result <- Box.test(weeks, lag = 12, type = "Ljung-Box")
+cat("Box-Ljung Test p-value:", box_test_result$p.value, "\n")
+
+if (box_test_result$p.value < 0.05) {
+  cat("The Box-Ljung Test suggests the presence of serial correlation in the residuals.\n")
+  
+  
+  arima_model <- arima(weeks, order = c(1, 0, 1))
+  residuals <- residuals(arima_model)
+  
+  
+  cat("\nFitted ARIMA Model Summary:\n")
+  print(summary(arima_model))
+  
+} else {
+  cat("The Box-Ljung Test does not provide evidence of serial correlation in the residuals.\n")
+}
+
+
+
+```
+
+Autocorrelation Function (ACF) and Partial Autocorrelation Function (PACF) for Weekly Log Returns:
+The ACF and PACF plots help identify the presence of serial correlation in time series data.
+
+ACF Plot:
+The ACF plot shows significant autocorrelation at multiple lags.
+The Box-Ljung Test (p-value = 0.0031) rejects the null hypothesis of no serial correlation, indicating the presence of serial correlation in the weekly log returns.
+PACF Plot:
+
+The PACF plot helps identify the order of the autoregressive (AR) component in the model.
+ARIMA Model for Serial Correlation:
+Fitted ARIMA Model:
+The ARIMA(1, 0, 1) model is fitted to account for the detected serial correlation.
+Coefficient estimates (ar1, ma1, intercept) indicate a significant ARIMA structure.
+The log likelihood, AIC, and other measures are provided for model evaluation.
+Autocorrelation Function (ACF) for ARIMA Residuals and Ljung-Box Test:
+ACF for ARIMA Residuals:
+ACF plot for the squared residuals shows significant autocorrelation at multiple lags.
+Ljung-Box Test for ARIMA Residuals (ARCH Effects):
+The Box-Ljung Test (p-value = 0.00098) suggests the presence of ARCH effects in the residuals.
+
+```{r}
+#3C
+library(rugarch)
+acf_residuals_arima <- acf(residuals^2, lag.max = 6, main = "Autocorrelation Function for ARIMA Residuals")
+
+box_test_residuals_arima <- Box.test(residuals^2, lag = 6, type = "Ljung-Box")
+cat("\nBox-Ljung Test for ARIMA Residuals (ARCH effects) p-value:", box_test_residuals_arima$p.value, "\n")
+
+if (box_test_residuals_arima$p.value < 0.05) {
+  cat("The Box-Ljung Test for ARIMA Residuals suggests the presence of ARCH effects.\n")
+  
+  
+  garch_model_arima <- ugarchspec(variance.model = list(model = "sGARCH", garchOrder = c(1, 1)),
+                                  mean.model = list(armaOrder = c(0, 0)))
+  
+  garch_fit_arima <- ugarchfit(garch_model_arima, residuals)
+  
+  cat("\nFitted GARCH Model for ARIMA Residuals Summary:\n")
+  print(garch_fit_arima)
+} else {
+  cat("The Box-Ljung Test for ARIMA Residuals does not provide evidence of ARCH effects.\n")
+}
+
+```
+GARCH(1,1) Model for ARIMA Residuals:
+Fitted GARCH(1,1) Model for ARIMA Residuals:
+The GARCH(1,1) model is fitted to the squared residuals to account for ARCH effects.
+Parameter estimates for mean, omega, alpha1, and beta1 are provided.
+The Weighted Ljung-Box Test and other diagnostic tests evaluate the goodness of fit.
+The initial analysis detected serial correlation in the weekly log returns.
+An ARIMA(1, 0, 1) model was successfully fitted to address the serial correlation.
+The residuals from the ARIMA model exhibited significant autocorrelation, indicating the need to account for ARCH effects.
+A GARCH(1,1) model was fitted to the squared residuals, successfully capturing the ARCH effects.
+The overall approach involved a systematic evaluation of serial correlation, fitting appropriate models, and addressing ARCH effects, demonstrating a comprehensive time series analysis.
+
+```{r}
+#2d(i)
+omega <- 0.5807
+alpha1 <- 0.2631
+beta1 <- 0.3734
+excess_kurtosis_garch <- (6 * omega^2) / (1 - 2 * alpha1^2 - (alpha1 + beta1)^2)
+cat("Excess Kurtosis (GARCH):", excess_kurtosis_garch, "\n")
+```
+The excess kurtosis of 4.432879 suggests that the distribution of the GARCH(1,1) model residuals is leptokurtic, meaning it has heavier tails compared to a normal distribution. Leptokurtosis indicates a higher probability of extreme values in the distribution. In relevance To our financial domain, leptokurtic distributions are often used to capture the fat-tail behavior observed in financial returns, acknowledging the increased likelihood of extreme market events aka blackswans
+
+```{r}
+#2d(ii)
+library(e1071)
+omega <- 0.5807
+alpha1 <- 0.2631
+beta1 <- 0.3734
+n <- 1000
+
+
+empirical_excess_kurtosis <- kurtosis(residuals)
+
+cat("Empirical Excess Kurtosis:", empirical_excess_kurtosis, "\n")
+
+
+theoretical_excess_kurtosis <- (6 * omega^2) / (1 - 2 * alpha1^2 - (alpha1 + beta1)^2)
+
+cat("Theoretical Excess Kurtosis (GARCH):", theoretical_excess_kurtosis, "\n")
+
+excess_kurtosis_difference <- theoretical_excess_kurtosis - empirical_excess_kurtosis
+
+cat("Excess Kurtosis Difference:", excess_kurtosis_difference, "\n")
+
+if (excess_kurtosis_difference != 0) {
+  required_sigma_squared <- rep(NA, n)
+  
+  for (t in 2:n) {
+    required_sigma_squared[t] <- (6 * omega^2) / (1 - 2 * alpha1^2 - (alpha1 + beta1)^2)
+  }
+  
+  required_residuals <- rnorm(n, sd = sqrt(required_sigma_squared))
+  
+  required_empirical_excess_kurtosis <- kurtosis(required_residuals)
+  
+  cat("Empirical Excess Kurtosis (Generated Residuals):", required_empirical_excess_kurtosis, "\n")
+}
+
+```
+
+```{r}
+#3A
+library(quantmod)
+library(tseries)
+library(forecast)
+
+
+symbol <- "XOM"
+start_date <- "1980-01-01"
+end_date <- "2023-12-01"
+
+getSymbols(symbol, src = "yahoo", from = start_date, to = end_date, auto.assign = TRUE, return.class = "xts")
+
+
+daily_returns <- dailyReturn(Cl(XOM), type = "log")
+
+training_data <- daily_returns["1980-01-01/2018-12-01"]
+testing_data <- daily_returns["2018-12-02/2023-12-01"]
+
+
+plot(training_data, main = "Daily Log Returns of Exxon Mobil (XOM)")
+
+
+acf(training_data, lag.max = 30, main = "ACF of Daily Log Returns")
+pacf(training_data, lag.max = 30, main = "PACF of Daily Log Returns")
+
+arima_model <- arima(training_data, order = c(1, 0, 1))
+
+summary(arima_model)
+
+
+forecast_values <- forecast(arima_model, h = length(testing_data))
+
+plot(daily_returns, main = "Actual vs. Predicted Daily Log Returns", col = "blue")
+lines(forecast_values$mean, col = "red")
+
+mse <- mean((forecast_values$mean - testing_data)^2)
+cat("Mean Squared Error on Testing Data:", mse, "\n")
+```
+
+Coefficients:
+ar1 (AutoRegressive Term):
+Coefficient: 0.6351
+Interpretation: A one-unit increase in the past value (lag 1) of the time series is associated with a 0.6351-unit increase in the present value, holding other variables constant.
+ma1 (Moving Average Term):
+Coefficient: -0.7398
+Interpretation: A one-unit increase in the past forecast error (lag 1) is associated with a -0.7398-unit decrease in the present value, holding other variables constant.
+Intercept:
+Coefficient: 3e-04 (0.0003)
+Interpretation: This represents the constant term in the model, indicating the expected value of the time series when all other variables are zero.
+Model Stats:
+sigma^2 (Residual Variance):
+Estimated as 0.0002137
+This is the estimated variance of the residuals (forecast errors) from the model. A smaller value indicates that the model captures a significant portion of the variability in the data.
+Log Likelihood:
+27548.43
+The log likelihood measures how well the model explains the observed data. Higher values indicate a better fit.
+AIC (Akaike Information Criterion):
+-55088.87
+AIC balances the goodness of fit with the simplicity of the model. Lower AIC values suggest a more parsimonious model. In this case, the negative AIC indicates that the model provides a good balance between fit and complexity.
+Justification:
+ARIMA Order (1, 0, 1):
+The choice of ARIMA(1, 0, 1) indicates that the model includes an autoregressive term of order 1 and a moving average term of order 1. This selection might be justified by observing the autocorrelation and partial autocorrelation functions during the model-building process.
+Interpretation of Coefficients:
+Positive ar1 coefficient suggests a positive autocorrelation at lag 1.
+Negative ma1 coefficient implies that past forecast errors influence the current value, indicating a corrective mechanism in the model.
+Residual Variance (sigma^2):
+The low residual variance (0.0002137) indicates that the model captures a substantial portion of the variability in the daily log returns.
+Log Likelihood and AIC:
+The high log likelihood and the negative AIC indicate that the model provides a good fit to the training data.
+Mean Error:
+ME measures the average difference between the predicted and actual values.
+In the model, ME is approximately -1.36e-06. A near-zero ME indicates that, on average, the model's predictions are very close to the actual values.
+Root Mean Squared Error (RMSE):
+RMSE represents the square root of the average squared differences between predicted and actual values.
+The RMSE value is around 0.0146. Lower RMSE values suggest a better fit, indicating that the model's predictions are generally accurate.
+Mean Absolute Error:
+MAE is the average of the absolute differences between predicted and actual values.
+The model achieves an MAE of approximately 0.0104, implying that, on average, the absolute prediction errors are small.
+Mean Absolute Scaled Error: MASE compares the model's performance to a naïve forecast 
+With a MASE value of approximately 0.6763, the model performs better than a simple mean forecast, indicating its usefulness.
+Autocorrelation of Errors (ACF1):
+ACF1 measures the autocorrelation of the model's residuals at lag 1.
+The reported ACF1 of approximately 0.00696 suggests low autocorrelation in the residuals, indicating that the model has captured most of the serial correlation.
