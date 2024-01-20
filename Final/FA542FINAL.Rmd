@@ -12,17 +12,6 @@ output:
 
 ```{r}
 #1a
-#coefficients_eq1 <- c(1, -0.1, -0.05)
-#coefficients_eq2 <- c(1, -0.3, 0.1)
-#roots_eq1 <- polyroot(coefficients_eq1)
-#roots_eq2 <- polyroot(coefficients_eq2)
-#print("Roots for the first equation:")
-#print(roots_eq1)
-#print("Roots for the second equation:")
-#print(roots_eq2)
-#eigen_result <- eigen(A)
-#print("Eigenvalues of matrix A:")
-#print(eigen_result$values)
 
 A <- matrix(rep(1,4),nrow = 2)
 
@@ -54,11 +43,6 @@ The eigenvalues of matrix A are both positive, which is a necessary condition fo
 
 ```{r}
 #b(i)
-#p0 <- matrix(c(-0.05, 0.1), nrow = 2)
-#m <- solve(diag(2) - p1) %*% p0
-#cat("The mean vector is: \n")
-#print(m)
-
 
 p1 <- matrix(c(0.1, 0.05, -0.1, 0.3), nrow = 2)
 
