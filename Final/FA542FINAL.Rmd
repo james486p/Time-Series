@@ -360,7 +360,8 @@ The ACF and PACF plots help identify the presence of serial correlation in time 
 
 ACF Plot:
 The ACF plot shows significant autocorrelation at multiple lags.
-The Box-Ljung Test (p-value = 0.0031) rejects the null hypothesis of no serial correlation, indicating the presence of serial correlation in the weekly log returns.
+The Box-Ljung Test (p-value = 0.0031) rejects the null hypothesis of no serial correlation,
+indicating the presence of serial correlation in the weekly log returns.
 PACF Plot:
 
 The PACF plot helps identify the order of the autoregressive (AR) component in the model.
